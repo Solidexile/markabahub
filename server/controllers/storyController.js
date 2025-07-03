@@ -1,6 +1,6 @@
 const Story = require('../models/Story');
 const User = require('../models/User');
-const asyncHandler = require('../middleware/async');
+const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
 // @desc    Create a story

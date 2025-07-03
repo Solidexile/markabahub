@@ -1,6 +1,6 @@
 const Friend = require('../models/Friend');
 const User = require('../models/User');
-const asyncHandler = require('../middleware/async');
+const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
 // @desc    Send friend request

@@ -1,6 +1,6 @@
 const Chat = require('../models/Chat');
 const User = require('../models/User');
-const asyncHandler = require('../middleware/async');
+const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
 // @desc    Get all chats for a user
