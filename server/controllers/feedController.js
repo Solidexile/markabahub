@@ -2,41 +2,30 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
+const { Op } = require('sequelize');
 
 // @desc    Get news feed
 // @route   GET /api/feed
 // @access  Private
 exports.getNewsFeed = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id).populate('friends');
-  
-  // Get IDs of friends and user themselves
-  const friendIds = user.friends.map(friend => friend._id);
-  const allUserIds = [...friendIds, req.user.id];
-
-  // Pagination
+  // For now, just get all public posts and the user's own posts (expand to friends if you add a friends table/relationship)
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
-  const startIndex = (page - 1) * limit;
+  const offset = (page - 1) * limit;
 
-  // Get posts from friends and public posts from non-friends
-  const posts = await Post.find({
-    $or: [
-      { user: { $in: allUserIds } }, // Posts from user and friends
-      { privacy: 'public' } // Public posts from others
+  const where = {
+    [Op.or]: [
+      { privacy: 'public' },
+      { userId: req.user.id },
+      // Add logic for friends' posts if you have a friends table/relationship
     ]
-  })
-  .sort('-createdAt')
-  .skip(startIndex)
-  .limit(limit)
-  .populate('user', 'name avatar username')
-  .populate('tags', 'name avatar username');
+  };
 
-  // Get total count for pagination
-  const total = await Post.countDocuments({
-    $or: [
-      { user: { $in: allUserIds } },
-      { privacy: 'public' }
-    ]
+  const { rows: posts, count: total } = await Post.findAndCountAll({
+    where,
+    order: [['createdAt', 'DESC']],
+    limit,
+    offset
   });
 
   res.json({
@@ -53,31 +42,13 @@ exports.getNewsFeed = asyncHandler(async (req, res, next) => {
 // @route   GET /api/feed/trending
 // @access  Private
 exports.getTrendingPosts = asyncHandler(async (req, res, next) => {
-  // Get posts with most likes and comments in the last 7 days
-  const posts = await Post.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-      }
+  // For now, get the most recent posts (expand to most liked/commented if you add those fields)
+  const posts = await Post.findAll({
+    where: {
+      createdAt: { [Op.gte]: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
     },
-    {
-      $addFields: {
-        engagement: {
-          $add: [
-            { $size: "$likes" },
-            { $size: "$comments" }
-          ]
-        }
-      }
-    },
-    { $sort: { engagement: -1 } },
-    { $limit: 10 }
-  ]);
-
-  // Populate user data
-  await Post.populate(posts, {
-    path: 'user',
-    select: 'name avatar username'
+    order: [['createdAt', 'DESC']],
+    limit: 10
   });
 
   res.json({

@@ -2,6 +2,7 @@ const Friend = require('../models/Friend');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
+const { Op } = require('sequelize');
 
 // @desc    Send friend request
 // @route   POST /api/friends/request
@@ -11,7 +12,7 @@ exports.sendFriendRequest = asyncHandler(async (req, res, next) => {
   const requesterId = req.user.id;
 
   // Check if recipient exists
-  const recipient = await User.findById(recipientId);
+  const recipient = await User.findByPk(recipientId);
   if (!recipient) {
     return next(new ErrorResponse('User not found', 404));
   }
@@ -23,10 +24,12 @@ exports.sendFriendRequest = asyncHandler(async (req, res, next) => {
 
   // Check if friend request already exists
   const existingRequest = await Friend.findOne({
-    $or: [
-      { requester: requesterId, recipient: recipientId },
-      { requester: recipientId, recipient: requesterId }
-    ]
+    where: {
+      [Op.or]: [
+        { requester: requesterId, recipient: recipientId },
+        { requester: recipientId, recipient: requesterId }
+      ]
+    }
   });
 
   if (existingRequest) {
@@ -40,10 +43,6 @@ exports.sendFriendRequest = asyncHandler(async (req, res, next) => {
     status: 'pending'
   });
 
-  // Populate the requester and recipient details
-  await friendRequest.populate('requester', 'name avatar');
-  await friendRequest.populate('recipient', 'name avatar');
-
   res.status(201).json(friendRequest);
 });
 
@@ -55,16 +54,13 @@ exports.respondToRequest = asyncHandler(async (req, res, next) => {
   const { action } = req.body; // 'accept', 'decline', or 'block'
   const userId = req.user.id;
 
-  const friendRequest = await Friend.findById(requestId)
-    .populate('requester', 'name avatar')
-    .populate('recipient', 'name avatar');
-
+  const friendRequest = await Friend.findByPk(requestId);
   if (!friendRequest) {
     return next(new ErrorResponse('Friend request not found', 404));
   }
 
   // Check if user is the recipient
-  if (friendRequest.recipient._id.toString() !== userId) {
+  if (friendRequest.recipient !== userId) {
     return next(new ErrorResponse('Not authorized to respond to this request', 401));
   }
 
@@ -90,20 +86,25 @@ exports.respondToRequest = asyncHandler(async (req, res, next) => {
 exports.getFriends = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
 
-  const friends = await Friend.find({
-    $or: [
-      { requester: userId, status: 'accepted' },
-      { recipient: userId, status: 'accepted' }
-    ]
-  })
-  .populate('requester', 'name avatar username')
-  .populate('recipient', 'name avatar username');
+  const friends = await Friend.findAll({
+    where: {
+      [Op.or]: [
+        { requester: userId, status: 'accepted' },
+        { recipient: userId, status: 'accepted' }
+      ]
+    }
+  });
 
   // Transform to get friend objects
-  const friendList = friends.map(friendship => {
-    return friendship.requester._id.toString() === userId 
+  const friendIds = friends.map(friendship => {
+    return friendship.requester === userId 
       ? friendship.recipient 
       : friendship.requester;
+  });
+
+  const friendList = await User.findAll({
+    where: { id: { [Op.in]: friendIds } },
+    attributes: ['id', 'name', 'avatar', 'username']
   });
 
   res.json(friendList);
@@ -115,10 +116,12 @@ exports.getFriends = asyncHandler(async (req, res, next) => {
 exports.getFriendRequests = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
 
-  const requests = await Friend.find({
-    recipient: userId,
-    status: 'pending'
-  }).populate('requester', 'name avatar username');
+  const requests = await Friend.findAll({
+    where: {
+      recipient: userId,
+      status: 'pending'
+    }
+  });
 
   res.json(requests);
 });
@@ -130,9 +133,16 @@ exports.getFriendStatus = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
   const otherUserId = req.params.userId;
 
-  const status = await Friend.getFriendStatus(userId, otherUserId);
+  const status = await Friend.findOne({
+    where: {
+      [Op.or]: [
+        { requester: userId, recipient: otherUserId },
+        { requester: otherUserId, recipient: userId }
+      ]
+    }
+  });
 
-  res.json({ status });
+  res.json({ status: status ? status.status : 'none' });
 });
 
 // @desc    Remove friend
@@ -142,16 +152,20 @@ exports.removeFriend = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
   const friendId = req.params.friendId;
 
-  const friendship = await Friend.findOneAndDelete({
-    $or: [
-      { requester: userId, recipient: friendId },
-      { requester: friendId, recipient: userId }
-    ]
+  const friendship = await Friend.findOne({
+    where: {
+      [Op.or]: [
+        { requester: userId, recipient: friendId },
+        { requester: friendId, recipient: userId }
+      ]
+    }
   });
 
   if (!friendship) {
     return next(new ErrorResponse('Friendship not found', 404));
   }
+
+  await friendship.destroy();
 
   res.json({ success: true });
 });

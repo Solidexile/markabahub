@@ -1,55 +1,45 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/sequelize');
 
-const MarketplaceItemSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const MarketplaceItem = sequelize.define('MarketplaceItem', {
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
   title: {
-    type: String,
-    required: true,
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   description: {
-    type: String,
-    required: true
+    type: DataTypes.TEXT,
+    allowNull: false,
   },
   price: {
-    type: Number,
-    required: true
+    type: DataTypes.FLOAT,
+    allowNull: false,
   },
   category: {
-    type: String,
-    required: true,
-    enum: ['electronics', 'furniture', 'clothing', 'vehicles', 'property', 'services', 'other']
+    type: DataTypes.ENUM('electronics', 'furniture', 'clothing', 'vehicles', 'property', 'services', 'other'),
+    allowNull: false,
   },
-  images: [{
-    type: String,
-    required: true
-  }],
+  images: {
+    type: DataTypes.JSON, // Array of image URLs
+    defaultValue: [],
+  },
   location: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   condition: {
-    type: String,
-    enum: ['new', 'used', 'refurbished'],
-    default: 'used'
+    type: DataTypes.ENUM('new', 'used', 'refurbished'),
+    defaultValue: 'used',
   },
   status: {
-    type: String,
-    enum: ['available', 'pending', 'sold'],
-    default: 'available'
+    type: DataTypes.ENUM('available', 'pending', 'sold'),
+    defaultValue: 'available',
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+}, {
+  timestamps: true,
 });
 
-module.exports = mongoose.model('MarketplaceItem', MarketplaceItemSchema);
+module.exports = MarketplaceItem;

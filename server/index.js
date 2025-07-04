@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
+const sequelize = require('./config/sequelize');
 const cors = require('cors');
 const http = require('http');
 const socketio = require('socket.io');
@@ -16,10 +16,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.log('❌ MongoDB Error:', err));
+// Sync Sequelize models
+sequelize.sync()
+  .then(() => console.log('MySQL & Sequelize synced!'))
+  .catch(err => console.error('Sequelize sync error:', err));
 
 // Routes
 app.use('/api/auth', authRoutes);

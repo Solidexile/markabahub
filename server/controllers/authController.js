@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const ErrorResponse = require('../utils/errorResponse');
+const { Op } = require('sequelize');
 
 // Helper function
 const generateToken = (user) => {
@@ -26,27 +27,26 @@ const authController = {
       const { name, email, password } = req.body;
       
       // Check if user exists
-      let user = await User.findOne({ email });
+      let user = await User.findOne({ where: { email } });
       if (user) {
         return next(new ErrorResponse('User already exists', 400));
       }
 
       // Create user
-      user = new User({
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      user = await User.create({
         name,
         email,
-        password,
+        password: hashedPassword,
         username: email.split('@')[0] + Math.floor(Math.random() * 1000)
       });
 
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
-      await user.save();
-
       // Return token
       const token = generateToken(user);
-      res.status(201).json({ success: true, token });
+      // Fetch user without password
+      const userData = await User.findByPk(user.id, { attributes: { exclude: ['password'] } });
+      res.status(201).json({ success: true, token, user: userData });
     } catch (err) {
       next(new ErrorResponse('Registration failed', 500));
     }
@@ -60,7 +60,7 @@ const authController = {
       }
 
       const { email, password } = req.body;
-      const user = await User.findOne({ email }).select('+password');
+      const user = await User.findOne({ where: { email } });
       
       if (!user) {
         return next(new ErrorResponse('Invalid credentials', 401));
@@ -72,7 +72,9 @@ const authController = {
       }
 
       const token = generateToken(user);
-      res.json({ success: true, token });
+      // Fetch user without password
+      const userData = await User.findByPk(user.id, { attributes: { exclude: ['password'] } });
+      res.json({ success: true, token, user: userData });
     } catch (err) {
       next(new ErrorResponse('Login failed', 500));
     }
@@ -80,7 +82,7 @@ const authController = {
 
   getMe: async (req, res, next) => {
     try {
-      const user = await User.findById(req.user.id).select('-password');
+      const user = await User.findByPk(req.user.id, { attributes: { exclude: ['password'] } });
       res.json({ success: true, data: user });
     } catch (err) {
       next(new ErrorResponse('Server error', 500));
@@ -90,10 +92,10 @@ const authController = {
   googleLogin: async (req, res, next) => {
     try {
       const { uid, email, displayName, photoURL } = req.body;
-      let user = await User.findOne({ email });
+      let user = await User.findOne({ where: { email } });
 
       if (!user) {
-        user = new User({
+        user = await User.create({
           uid,
           email,
           name: displayName,
@@ -103,11 +105,12 @@ const authController = {
           password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10),
           verified: true
         });
-        await user.save();
       }
 
       const token = generateToken(user);
-      res.json({ success: true, token });
+      // Fetch user without password
+      const userData = await User.findByPk(user.id, { attributes: { exclude: ['password'] } });
+      res.json({ success: true, token, user: userData });
     } catch (err) {
       next(new ErrorResponse('Google auth failed', 500));
     }

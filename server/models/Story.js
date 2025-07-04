@@ -1,55 +1,33 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/sequelize');
 
-const StorySchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const Story = sequelize.define('Story', {
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
   media: {
-    type: String, // URL to image/video
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   mediaType: {
-    type: String,
-    enum: ['image', 'video'],
-    required: true
+    type: DataTypes.ENUM('image', 'video'),
+    allowNull: false,
   },
   caption: {
-    type: String,
-    maxlength: 200
+    type: DataTypes.STRING(200),
+    allowNull: true,
   },
-  viewers: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    viewedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+  viewers: {
+    type: DataTypes.JSON, // Array of { userId, viewedAt }
+    defaultValue: [],
+  },
   expiresAt: {
-    type: Date,
-    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
+    type: DataTypes.DATE,
+    allowNull: false,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+}, {
+  timestamps: true,
 });
 
-// Index for expiration
-StorySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-
-// Virtual for viewer count
-StorySchema.virtual('viewCount').get(function() {
-  return this.viewers.length;
-});
-
-// Method to check if user has viewed the story
-StorySchema.methods.hasViewed = function(userId) {
-  return this.viewers.some(viewer => viewer.user.toString() === userId);
-};
-
-module.exports = mongoose.model('Story', StorySchema);
+module.exports = Story;

@@ -1,4 +1,5 @@
 const MarketplaceItem = require('../models/MarketplaceItem');
+const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
 
 // CREATE ITEM
@@ -7,12 +8,10 @@ exports.createItem = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-
   try {
     const { title, description, price, category, images, location, condition } = req.body;
-    
-    const newItem = new MarketplaceItem({
-      user: req.user.id,
+    const item = await MarketplaceItem.create({
+      userId: req.user.id,
       title,
       description,
       price,
@@ -21,8 +20,6 @@ exports.createItem = async (req, res, next) => {
       location,
       condition
     });
-
-    const item = await newItem.save();
     res.status(201).json(item);
   } catch (err) {
     next(err);
@@ -33,35 +30,31 @@ exports.createItem = async (req, res, next) => {
 exports.getAllItems = async (req, res, next) => {
   try {
     const { category, minPrice, maxPrice, location, search, page = 1, limit = 10 } = req.query;
-    
-    let query = { status: 'available' };
-    
-    if (category) query.category = category;
+    const where = { status: 'available' };
+    if (category) where.category = category;
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
+      where.price = {};
+      if (minPrice) where.price[Op.gte] = Number(minPrice);
+      if (maxPrice) where.price[Op.lte] = Number(maxPrice);
     }
-    if (location) query.location = new RegExp(location, 'i');
+    if (location) where.location = { [Op.like]: `%${location}%` };
     if (search) {
-      query.$or = [
-        { title: new RegExp(search, 'i') },
-        { description: new RegExp(search, 'i') }
+      where[Op.or] = [
+        { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } }
       ];
     }
-    
-    const items = await MarketplaceItem.find(query)
-      .populate('user', 'name avatar rating')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-      
-    const count = await MarketplaceItem.countDocuments(query);
-      
+    const items = await MarketplaceItem.findAll({
+      where,
+      order: [['createdAt', 'DESC']],
+      limit: Number(limit),
+      offset: (Number(page) - 1) * Number(limit)
+    });
+    const count = await MarketplaceItem.count({ where });
     res.json({
       items,
       totalPages: Math.ceil(count / limit),
-      currentPage: page
+      currentPage: Number(page)
     });
   } catch (err) {
     next(err);
@@ -71,13 +64,10 @@ exports.getAllItems = async (req, res, next) => {
 // GET SINGLE ITEM
 exports.getItemById = async (req, res, next) => {
   try {
-    const item = await MarketplaceItem.findById(req.params.id)
-      .populate('user', 'name avatar phone rating createdAt');
-      
+    const item = await MarketplaceItem.findByPk(req.params.id);
     if (!item) {
       return res.status(404).json({ msg: 'Item not found' });
     }
-    
     res.json(item);
   } catch (err) {
     next(err);
@@ -88,33 +78,23 @@ exports.getItemById = async (req, res, next) => {
 exports.updateItem = async (req, res, next) => {
   try {
     const { title, description, price, category, images, location, condition, status } = req.body;
-    
-    let item = await MarketplaceItem.findById(req.params.id);
-    
+    const item = await MarketplaceItem.findByPk(req.params.id);
     if (!item) {
       return res.status(404).json({ msg: 'Item not found' });
     }
-    
-    if (item.user.toString() !== req.user.id) {
+    if (item.userId !== req.user.id) {
       return res.status(401).json({ msg: 'User not authorized' });
     }
-    
-    item = await MarketplaceItem.findByIdAndUpdate(
-      req.params.id,
-      { 
-        title, 
-        description, 
-        price, 
-        category, 
-        images, 
-        location, 
-        condition, 
-        status,
-        updatedAt: Date.now() 
-      },
-      { new: true }
-    );
-    
+    await item.update({
+      title,
+      description,
+      price,
+      category,
+      images,
+      location,
+      condition,
+      status
+    });
     res.json(item);
   } catch (err) {
     next(err);
@@ -124,18 +104,14 @@ exports.updateItem = async (req, res, next) => {
 // DELETE ITEM
 exports.deleteItem = async (req, res, next) => {
   try {
-    const item = await MarketplaceItem.findById(req.params.id);
-    
+    const item = await MarketplaceItem.findByPk(req.params.id);
     if (!item) {
       return res.status(404).json({ msg: 'Item not found' });
     }
-    
-    if (item.user.toString() !== req.user.id) {
+    if (item.userId !== req.user.id) {
       return res.status(401).json({ msg: 'User not authorized' });
     }
-    
-    await item.deleteOne();
-    
+    await item.destroy();
     res.json({ msg: 'Item removed' });
   } catch (err) {
     next(err);
@@ -145,9 +121,10 @@ exports.deleteItem = async (req, res, next) => {
 // GET USER ITEMS
 exports.getItemsByUser = async (req, res, next) => {
   try {
-    const items = await MarketplaceItem.find({ user: req.params.userId })
-      .sort({ createdAt: -1 });
-      
+    const items = await MarketplaceItem.findAll({
+      where: { userId: req.params.userId },
+      order: [['createdAt', 'DESC']]
+    });
     res.json(items);
   } catch (err) {
     next(err);

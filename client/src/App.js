@@ -23,6 +23,7 @@ import FavoritesPage from './pages/Profile/FavoritesPage';
 import SubscriptionsPage from './pages/Profile/SubscriptionsPage';
 import MarketplaceFavoritesPage from './pages/MarketPlace/MarketplaceFavoritesPage';
 import MyListingsPage from './pages/MarketPlace/MyListingsPage';
+import RegisterPage from './pages/Auth/Register';
 
 // Guard to redirect to business profile setup if not complete
 function BusinessProfileGuard({ children }) {
@@ -48,6 +49,7 @@ function App() {
             <Navbar />
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="/setup-business" element={<PrivateRoute><BusinessProfileSetup /></PrivateRoute>} />
               <Route path="/" element={<PrivateRoute><BusinessProfileGuard><HomePage /></BusinessProfileGuard></PrivateRoute>} />
               <Route path="/profile/:username" element={<PrivateRoute><BusinessProfileGuard><ProfilePage /></BusinessProfileGuard></PrivateRoute>} />

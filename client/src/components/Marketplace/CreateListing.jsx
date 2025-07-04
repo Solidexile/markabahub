@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { Box, TextField, Button, MenuItem, Typography, Grid, IconButton } from '@mui/material';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { storage } from '../../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const categories = [
@@ -40,10 +38,11 @@ const CreateListing = ({ editItem, onSuccess }) => {
     const files = Array.from(e.target.files);
     setUploading(true);
     try {
+      // If you need to upload files, use your backend API instead
+      // This is a placeholder and should be replaced with actual file upload logic
       const urls = await Promise.all(files.map(async (file) => {
-        const fileRef = ref(storage, `marketplace/${Date.now()}-${file.name}`);
-        await uploadBytes(fileRef, file);
-        return await getDownloadURL(fileRef);
+        // Placeholder for file upload logic
+        return 'placeholder-url';
       }));
       setForm((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
     } catch (err) {

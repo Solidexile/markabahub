@@ -2,26 +2,29 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
+const { Op } = require('sequelize');
 
 // @desc    Create a post
 // @route   POST /api/posts
 // @access  Private
 exports.createPost = asyncHandler(async (req, res, next) => {
-  const { content, privacy, tags, location } = req.body;
+  const { content, privacy, tags, location, businessId } = req.body;
   const images = req.files?.map(file => file.path) || [];
 
-  // Create post
+  // Ensure user is logged in
+  if (!req.user || !req.user.id) {
+    return next(new ErrorResponse('Not authorized', 401));
+  }
+
   const post = await Post.create({
-    user: req.user.id,
+    userId: req.user.id,
+    businessId: businessId || null,
     content,
     images,
     privacy,
     tags,
     location
   });
-
-  // Populate user data
-  await post.populate('user', 'name avatar username');
 
   res.status(201).json(post);
 });
@@ -30,18 +33,16 @@ exports.createPost = asyncHandler(async (req, res, next) => {
 // @route   GET /api/posts
 // @access  Private
 exports.getPosts = asyncHandler(async (req, res, next) => {
-  // Get posts based on privacy settings
-  const posts = await Post.find({
-    $or: [
-      { privacy: 'public' },
-      { privacy: 'friends', user: { $in: req.user.friends } },
-      { user: req.user.id } // User's own posts
-    ]
-  })
-  .sort('-createdAt')
-  .populate('user', 'name avatar username')
-  .populate('tags', 'name avatar username');
-
+  // Only show public posts and the user's own posts
+  const posts = await Post.findAll({
+    where: {
+      [Op.or]: [
+        { privacy: 'public' },
+        { userId: req.user.id }
+      ]
+    },
+    order: [['createdAt', 'DESC']]
+  });
   res.json(posts);
 });
 
@@ -50,29 +51,15 @@ exports.getPosts = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.getPostsByUser = asyncHandler(async (req, res, next) => {
   const { userId } = req.params;
-
-  // Check if requesting user is friends with the target user or is the user themselves
-  const isFriend = req.user.friends.includes(userId);
-  const isSelf = req.user.id === userId;
-
-  let query = { user: userId };
-
-  if (!isSelf) {
-    query.$or = [
-      { privacy: 'public' },
-      { privacy: 'friends', user: userId }
-    ];
-    
-    if (!isFriend) {
-      query.privacy = 'public'; // Only show public posts if not friends
-    }
+  // Only show public posts or posts if the requesting user is the same as the userId
+  const where = { userId };
+  if (req.user.id !== userId) {
+    where.privacy = 'public';
   }
-
-  const posts = await Post.find(query)
-    .sort('-createdAt')
-    .populate('user', 'name avatar username')
-    .populate('tags', 'name avatar username');
-
+  const posts = await Post.findAll({
+    where,
+    order: [['createdAt', 'DESC']]
+  });
   res.json(posts);
 });
 

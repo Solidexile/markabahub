@@ -1,95 +1,37 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/sequelize');
 
-const PostSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const Post = sequelize.define('Post', {
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  businessId: {
+    type: DataTypes.INTEGER,
+    allowNull: true, // Null if not a business post
   },
   content: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 2000
+    type: DataTypes.TEXT,
+    allowNull: false,
   },
-  images: [{
-    type: String,
-    required: false
-  }],
+  images: {
+    type: DataTypes.JSON, // Array of image URLs
+    defaultValue: [],
+  },
   privacy: {
-    type: String,
-    enum: ['public', 'friends', 'private'],
-    default: 'public'
+    type: DataTypes.ENUM('public', 'friends', 'private'),
+    defaultValue: 'public',
   },
-  likes: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  comments: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    content: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 500
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  shares: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  tags: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
+  tags: {
+    type: DataTypes.JSON, // Array of tag user IDs
+    defaultValue: [],
+  },
   location: {
-    type: String,
-    required: false
+    type: DataTypes.STRING,
+    allowNull: true,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
 }, {
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  timestamps: true,
 });
 
-// Virtual for like count
-PostSchema.virtual('likeCount').get(function() {
-  return this.likes.length;
-});
-
-// Virtual for comment count
-PostSchema.virtual('commentCount').get(function() {
-  return this.comments.length;
-});
-
-// Virtual for share count
-PostSchema.virtual('shareCount').get(function() {
-  return this.shares.length;
-});
-
-// Add text index for search
-PostSchema.index({ content: 'text' });
-
-module.exports = mongoose.model('Post', PostSchema);
+module.exports = Post;

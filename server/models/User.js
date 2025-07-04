@@ -1,128 +1,102 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/sequelize');
 
-const UserSchema = new mongoose.Schema({
+const User = sequelize.define('User', {
   name: {
-    type: String,
-    required: true,
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   email: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true,
-    lowercase: true,
-    trim: true
   },
   password: {
-    type: String,
-    required: function() {
-      return !this.provider;
-    }
+    type: DataTypes.STRING,
+    allowNull: true, // allow null for OAuth
   },
   username: {
-    type: String,
+    type: DataTypes.STRING,
     unique: true,
-    trim: true
   },
   avatar: {
-    type: String,
-    default: '/default-avatar.png'
+    type: DataTypes.STRING,
+    defaultValue: '/default-avatar.png',
   },
   bio: {
-    type: String,
-    maxlength: 250,
-    default: ''
+    type: DataTypes.STRING(250),
+    defaultValue: '',
   },
   location: {
-    type: String,
-    default: ''
+    type: DataTypes.STRING,
+    defaultValue: '',
   },
   website: {
-    type: String,
-    default: ''
+    type: DataTypes.STRING,
+    defaultValue: '',
   },
   birthDate: {
-    type: Date
+    type: DataTypes.DATE,
+    allowNull: true,
   },
   provider: {
-    type: String,
-    enum: ['google', 'facebook', 'email'],
-    default: 'email'
+    type: DataTypes.ENUM('local', 'google', 'facebook'),
+    defaultValue: 'local',
   },
   uid: {
-    type: String // For OAuth providers
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   verified: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
-  privacy: {
-    profileVisibility: {
-      type: String,
-      enum: ['public', 'friends', 'private'],
-      default: 'public'
-    },
-    friendListVisibility: {
-      type: String,
-      enum: ['public', 'friends', 'private'],
-      default: 'public'
-    }
+  profileVisibility: {
+    type: DataTypes.ENUM('public', 'friends', 'private'),
+    defaultValue: 'public',
   },
-  friends: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  friendListVisibility: {
+    type: DataTypes.ENUM('public', 'friends', 'private'),
+    defaultValue: 'public',
   },
   role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+    type: DataTypes.ENUM('user', 'admin'),
+    defaultValue: 'user',
   },
-  provider: {
-    type: String,
-    enum: ['local', 'google', 'facebook'],
-    default: 'local'
+  businessName: {
+    type: DataTypes.STRING,
+    defaultValue: '',
   },
-  verified: {
-    type: Boolean,
-    default: false
+  businessDescription: {
+    type: DataTypes.STRING,
+    defaultValue: '',
   },
-  // Add business profile fields
-  businessProfile: {
-    businessName: { type: String, trim: true, default: '' },
-    businessDescription: { type: String, trim: true, default: '' },
-    businessLogo: { type: String, default: '' },
-    businessWebsite: { type: String, trim: true, default: '' },
-    businessLocation: { type: String, trim: true, default: '' },
-    isBusinessProfileComplete: { type: Boolean, default: false }
+  businessLogo: {
+    type: DataTypes.STRING,
+    defaultValue: '',
   },
-  // Favorites: array of Post IDs
-  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
-  // Subscriptions: array of User IDs
-  subscriptions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  // Marketplace Favorites: array of MarketplaceItem IDs
-  marketplaceFavorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'MarketplaceItem' }]
+  businessWebsite: {
+    type: DataTypes.STRING,
+    defaultValue: '',
+  },
+  businessLocation: {
+    type: DataTypes.STRING,
+    defaultValue: '',
+  },
+  isBusinessProfileComplete: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  businessPhone: {
+    type: DataTypes.STRING,
+    defaultValue: '',
+  },
+  businessBanner: {
+    type: DataTypes.STRING,
+    defaultValue: '',
+  },
 }, {
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  timestamps: true,
 });
 
-// Virtual for profile URL
-UserSchema.virtual('profileUrl').get(function() {
-  return `/profile/${this.username}`;
-});
-
-// Update timestamps on save
-UserSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-module.exports = mongoose.model('User', UserSchema);
+module.exports = User;
