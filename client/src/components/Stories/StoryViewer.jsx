@@ -46,7 +46,7 @@ const StoryViewer = ({ stories, open, onClose, onStoryEnd }) => {
 
     const markAsViewed = async () => {
         try {
-            await axios.put(`/api/stories/${currentStory._id}/view`);
+            await axios.put(`/api/stories/${currentStory.id}/view`);
         } catch (error) {
             console.error('Error marking story as viewed:', error);
         }
@@ -96,7 +96,7 @@ const StoryViewer = ({ stories, open, onClose, onStoryEnd }) => {
                 zIndex: 1
             }}>
                 {stories.map((story, index) => (
-                    <Box key={story._id} sx={{ flexGrow: 1 }}>
+                    <Box key={story.id} sx={{ flexGrow: 1 }}>
                         <LinearProgress
                             variant="determinate"
                             value={index < currentStoryIndex ? 100 : index === currentStoryIndex ? progress : 0}
@@ -124,11 +124,11 @@ const StoryViewer = ({ stories, open, onClose, onStoryEnd }) => {
                 alignItems: 'center'
             }}>
                 <Avatar
-                    src={currentStory.user.avatar}
+                    src={currentStory.user?.avatar}
                     sx={{ width: 40, height: 40, mr: 2 }}
                 />
                 <Typography variant="subtitle1" color="white" sx={{ flexGrow: 1 }}>
-                    {currentStory.user.name}
+                    {currentStory.user?.name}
                 </Typography>
                 <Tooltip title="Close" arrow>
                     <IconButton onClick={handleClose} sx={{ color: 'white' }}>

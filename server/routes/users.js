@@ -3,6 +3,9 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 
+// Profile route (must be first to avoid conflicts)
+router.get('/profile/:username', userController.getUserProfile);
+
 // Update business profile
 router.put('/:id/business-profile', protect, userController.updateBusinessProfile);
 
@@ -20,8 +23,5 @@ router.get('/:id/subscriptions', protect, userController.getSubscriptions);
 router.post('/:id/marketplace-favorites/:itemId', protect, userController.addMarketplaceFavorite);
 router.delete('/:id/marketplace-favorites/:itemId', protect, userController.removeMarketplaceFavorite);
 router.get('/:id/marketplace-favorites', protect, userController.getMarketplaceFavorites);
-
-// Add at the end:
-router.get('/:username', userController.getUserProfile);
 
 module.exports = router;

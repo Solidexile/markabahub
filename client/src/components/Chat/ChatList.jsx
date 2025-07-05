@@ -26,6 +26,7 @@ const ChatList = () => {
         setChats(response.data);
       } catch (error) {
         console.error('Error fetching chats:', error);
+        setChats([]);
       } finally {
         setLoading(false);
       }
@@ -35,11 +36,11 @@ const ChatList = () => {
   }, []);
 
   const getOtherParticipant = (participants) => {
-    return participants.find(p => p._id !== currentUser._id);
+    return participants.find(p => p.id !== currentUser.id);
   };
 
   const getUnreadCount = (messages) => {
-    return messages.filter(m => !m.read && m.sender._id !== currentUser._id).length;
+    return messages.filter(m => !m.read && m.sender?.id !== currentUser.id).length;
   };
 
   if (loading) {
@@ -51,13 +52,13 @@ const ChatList = () => {
       {chats.map(chat => {
         const otherUser = getOtherParticipant(chat.participants);
         const unreadCount = getUnreadCount(chat.messages);
-        const lastMessage = chat.messages[chat.messages.length - 1];
+        const lastMessage = chat.messages?.[chat.messages.length - 1];
 
         return (
           <ListItem 
-            key={chat._id} 
+            key={chat.id} 
             button 
-            onClick={() => navigate(`/chat/${chat._id}`)}
+            onClick={() => navigate(`/chat/${chat.id}`)}
             sx={{ py: 2 }}
           >
             <ListItemAvatar>
@@ -66,11 +67,11 @@ const ChatList = () => {
                 color="primary"
                 invisible={unreadCount === 0}
               >
-                <Avatar src={otherUser.avatar} />
+                <Avatar src={otherUser?.avatar} />
               </Badge>
             </ListItemAvatar>
             <ListItemText
-              primary={otherUser.name}
+              primary={otherUser?.name}
               secondary={
                 <>
                   <Typography

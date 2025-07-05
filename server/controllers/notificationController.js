@@ -7,12 +7,18 @@ const ErrorResponse = require('../utils/errorResponse');
 // @route   GET /api/notifications
 // @access  Private
 exports.getNotifications = asyncHandler(async (req, res, next) => {
-  const notifications = await Notification.find({
-    recipient: req.user.id
-  })
-  .sort('-createdAt')
-  .limit(20)
-  .populate('sender', 'name avatar username');
+  const notifications = await Notification.findAll({
+    where: {
+      recipient: req.user.id
+    },
+    order: [['createdAt', 'DESC']],
+    limit: 20,
+    include: [{
+      model: User,
+      as: 'sender',
+      attributes: ['id', 'name', 'avatar', 'username']
+    }]
+  });
 
   res.json(notifications);
 });
@@ -21,9 +27,14 @@ exports.getNotifications = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/notifications/read
 // @access  Private
 exports.markAsRead = asyncHandler(async (req, res, next) => {
-  await Notification.updateMany(
-    { recipient: req.user.id, read: false },
-    { $set: { read: true } }
+  await Notification.update(
+    { read: true },
+    {
+      where: {
+        recipient: req.user.id,
+        read: false
+      }
+    }
   );
 
   res.json({ success: true });
@@ -41,10 +52,12 @@ exports.createNotification = async (recipientId, senderId, type, content, relate
       relatedItem
     });
 
-    // Populate sender info
-    await notification.populate('sender', 'name avatar username');
+    // Get sender info
+    const sender = await User.findByPk(senderId, {
+      attributes: ['id', 'name', 'avatar', 'username']
+    });
 
-    return notification;
+    return { ...notification.toJSON(), sender };
   } catch (error) {
     console.error('Error creating notification:', error);
     return null;
@@ -55,18 +68,18 @@ exports.createNotification = async (recipientId, senderId, type, content, relate
 // @route   DELETE /api/notifications/:id
 // @access  Private
 exports.deleteNotification = asyncHandler(async (req, res, next) => {
-  const notification = await Notification.findById(req.params.id);
+  const notification = await Notification.findByPk(req.params.id);
 
   if (!notification) {
     return next(new ErrorResponse('Notification not found', 404));
   }
 
   // Check if user owns the notification
-  if (!notification.recipient.equals(req.user.id)) {
+  if (notification.recipient !== req.user.id) {
     return next(new ErrorResponse('Not authorized', 401));
   }
 
-  await notification.remove();
+  await notification.destroy();
 
   res.json({ success: true });
 });

@@ -24,12 +24,17 @@ const authController = {
         return next(new ErrorResponse('Validation failed', 400, errors.array()));
       }
 
-      const { name, email, password } = req.body;
+      const { name, email, password, username } = req.body;
       
       // Check if user exists
       let user = await User.findOne({ where: { email } });
       if (user) {
         return next(new ErrorResponse('User already exists', 400));
+      }
+      // Check if username exists
+      let usernameExists = await User.findOne({ where: { username } });
+      if (usernameExists) {
+        return next(new ErrorResponse('Username already taken', 400));
       }
 
       // Create user
@@ -39,7 +44,7 @@ const authController = {
         name,
         email,
         password: hashedPassword,
-        username: email.split('@')[0] + Math.floor(Math.random() * 1000)
+        username
       });
 
       // Return token

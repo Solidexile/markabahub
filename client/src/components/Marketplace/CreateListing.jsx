@@ -62,7 +62,7 @@ const CreateListing = ({ editItem, onSuccess }) => {
     setError('');
     try {
       if (editItem) {
-        await axios.put(`/api/marketplace/${editItem._id}`, form, {
+        await axios.put(`/api/marketplace/${editItem.id}`, form, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {

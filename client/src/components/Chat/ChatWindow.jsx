@@ -71,7 +71,7 @@ const ChatWindow = ({ chatId }) => {
   };
 
   const getOtherParticipant = () => {
-    return chat.participants.find(p => p._id !== currentUser._id);
+    return chat.participants.find(p => p.id !== currentUser.id);
   };
 
   if (loading) {
@@ -109,25 +109,25 @@ const ChatWindow = ({ chatId }) => {
         p: 2
       }}>
         <List>
-          {chat.messages.map((msg, index) => (
+          {chat.messages?.map((msg, index) => (
             <Box key={index}>
               <ListItem 
                 sx={{ 
-                  justifyContent: msg.sender._id === currentUser._id ? 'flex-end' : 'flex-start',
+                  justifyContent: msg.sender?.id === currentUser.id ? 'flex-end' : 'flex-start',
                   px: 0
                 }}
               >
-                {msg.sender._id !== currentUser._id && (
+                {msg.sender?.id !== currentUser.id && (
                   <ListItemAvatar>
-                    <Avatar src={msg.sender.avatar} />
+                    <Avatar src={msg.sender?.avatar} />
                   </ListItemAvatar>
                 )}
                 <ListItemText
                   primary={
                     <Box
                       sx={{
-                        bgcolor: msg.sender._id === currentUser._id ? 'primary.main' : 'grey.300',
-                        color: msg.sender._id === currentUser._id ? 'white' : 'text.primary',
+                        bgcolor: msg.sender?.id === currentUser.id ? 'primary.main' : 'grey.300',
+                        color: msg.sender?.id === currentUser.id ? 'white' : 'text.primary',
                         p: 1.5,
                         borderRadius: 2,
                         maxWidth: '70%',
@@ -143,15 +143,15 @@ const ChatWindow = ({ chatId }) => {
                       color="text.secondary"
                       sx={{ 
                         display: 'block',
-                        textAlign: msg.sender._id === currentUser._id ? 'right' : 'left'
+                        textAlign: msg.sender?.id === currentUser.id ? 'right' : 'left'
                       }}
                     >
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Typography>
                   }
                   sx={{ 
-                    ml: msg.sender._id === currentUser._id ? 0 : 1,
-                    mr: msg.sender._id === currentUser._id ? 1 : 0
+                    ml: msg.sender?.id === currentUser.id ? 0 : 1,
+                    mr: msg.sender?.id === currentUser.id ? 1 : 0
                   }}
                 />
               </ListItem>

@@ -7,13 +7,13 @@ const FriendRequestCard = ({ request, onRespond }) => {
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Avatar 
-            src={request.requester.avatar} 
+            src={request.requester?.avatar} 
             sx={{ width: 56, height: 56, mr: 2 }}
           />
           <Box>
-            <Typography variant="h6">{request.requester.name}</Typography>
+            <Typography variant="h6">{request.requester?.name}</Typography>
             <Typography variant="body2" color="text.secondary">
-              @{request.requester.username}
+              @{request.requester?.username}
             </Typography>
           </Box>
         </Box>
@@ -22,14 +22,14 @@ const FriendRequestCard = ({ request, onRespond }) => {
           <Button
             variant="contained"
             startIcon={<Check />}
-            onClick={() => onRespond(request._id, 'accept')}
+            onClick={() => onRespond(request.id, 'accept')}
           >
             Accept
           </Button>
           <Button
             variant="outlined"
             startIcon={<Clear />}
-            onClick={() => onRespond(request._id, 'decline')}
+            onClick={() => onRespond(request.id, 'decline')}
           >
             Decline
           </Button>

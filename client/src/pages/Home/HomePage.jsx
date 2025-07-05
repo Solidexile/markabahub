@@ -43,7 +43,7 @@ const HomePage = () => {
     };
 
     const handleDeletePost = (postId) => {
-        setPosts(prev => prev.filter(post => post._id !== postId));
+        setPosts(prev => prev.filter(post => post.id !== postId));
     };
 
     const loadMorePosts = () => {
@@ -72,16 +72,16 @@ const HomePage = () => {
                         </Typography>
                     ) : (
                         <>
-                            <Grid container spacing={3} sx={{ mt: 1 }}>
+                            <Box sx={{ mt: 1 }}>
                                 {posts.map(post => (
-                                    <Grid item xs={12} sm={6} md={4} key={post._id}>
+                                    <Box key={post.id} sx={{ mb: 3 }}>
                                         <PostCard
                                             post={post}
                                             onDelete={handleDeletePost}
                                         />
-                                    </Grid>
+                                    </Box>
                                 ))}
-                            </Grid>
+                            </Box>
                             {loading && (
                                 <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
                                     <CircularProgress />

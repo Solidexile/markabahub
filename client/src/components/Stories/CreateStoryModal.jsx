@@ -10,7 +10,9 @@ import {
   TextField,
   IconButton,
   CircularProgress,
-  Box
+  Box,
+  Typography,
+  Alert
 } from '@mui/material';
 import { Close, AddPhotoAlternate, Send } from '@mui/icons-material';
 
@@ -20,6 +22,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
   const [mediaPreview, setMediaPreview] = useState(null);
   const [caption, setCaption] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -27,6 +30,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
     if (file) {
       setMedia(file);
       setMediaPreview(URL.createObjectURL(file));
+      setError('');
     }
   };
 
@@ -34,6 +38,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
     if (!media) return;
 
     setLoading(true);
+    setError('');
     try {
       const formData = new FormData();
       formData.append('media', media);
@@ -41,7 +46,8 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
 
       const response = await axios.post('/api/stories', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('markabaHubToken')}`
         }
       });
 
@@ -49,6 +55,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
       handleClose();
     } catch (error) {
       console.error('Error creating story:', error);
+      setError(error.response?.data?.message || 'Failed to create story');
     } finally {
       setLoading(false);
     }
@@ -58,6 +65,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
     setMedia(null);
     setMediaPreview(null);
     setCaption('');
+    setError('');
     onClose();
   };
 
@@ -80,6 +88,12 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
       </DialogTitle>
       
       <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         {mediaPreview ? (
           <Box sx={{ 
             position: 'relative',

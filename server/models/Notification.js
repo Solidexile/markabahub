@@ -1,40 +1,38 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/sequelize');
 
-const NotificationSchema = new mongoose.Schema({
+const Notification = sequelize.define('Notification', {
   recipient: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
   sender: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
   type: {
-    type: String,
-    required: true,
-    enum: ['like', 'comment', 'friend_request', 'message', 'mention', 'post_share']
+    type: DataTypes.ENUM('like', 'comment', 'friend_request', 'message', 'mention', 'post_share'),
+    allowNull: false,
   },
   content: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   relatedItem: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: false // Can be post ID, comment ID, etc.
+    type: DataTypes.INTEGER,
+    allowNull: true, // Can be post ID, comment ID, etc.
   },
   read: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+}, {
+  timestamps: true,
+  indexes: [
+    {
+      fields: ['recipient', 'read', 'createdAt']
+    }
+  ]
 });
 
-// Index for faster queries
-NotificationSchema.index({ recipient: 1, read: 1, createdAt: -1 });
-
-module.exports = mongoose.model('Notification', NotificationSchema);
+module.exports = Notification;

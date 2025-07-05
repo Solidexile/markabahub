@@ -24,6 +24,7 @@ const TrendingSidebar = () => {
         setTrendingPosts(response.data.data);
       } catch (error) {
         console.error('Error fetching trending posts:', error);
+        setTrendingPosts([]);
       } finally {
         setLoading(false);
       }
@@ -51,10 +52,10 @@ const TrendingSidebar = () => {
       ) : (
         <List>
           {trendingPosts.map((post, index) => (
-            <Box key={post._id}>
+            <Box key={post.id}>
               <ListItem alignItems="flex-start" sx={{ py: 1 }}>
                 <ListItemAvatar>
-                  <Avatar src={post.user.avatar} />
+                  <Avatar src={post.user?.avatar} />
                 </ListItemAvatar>
                 <ListItemText
                   primary={
@@ -62,7 +63,7 @@ const TrendingSidebar = () => {
                       variant="subtitle2" 
                       sx={{ fontWeight: 'bold' }}
                     >
-                      {post.user.name}
+                      {post.user?.name}
                     </Typography>
                   }
                   secondary={
@@ -71,7 +72,7 @@ const TrendingSidebar = () => {
                       color="text.secondary"
                       noWrap
                     >
-                      {post.content.substring(0, 50)}...
+                      {post.content?.substring(0, 50)}...
                     </Typography>
                   }
                 />

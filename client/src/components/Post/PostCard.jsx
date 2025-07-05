@@ -38,11 +38,11 @@ const PostCard = ({ post, onDelete }) => {
   const { currentUser, token } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState(post.comments);
+  const [comments, setComments] = useState(post.comments || []);
   const [isLiked, setIsLiked] = useState(
-    post.likes.some(like => like.user._id === currentUser?._id)
+    post.likes?.some(like => like.user?.id === currentUser?.id) || false
   );
-  const [likeCount, setLikeCount] = useState(post.likes.length);
+  const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
   const [showComments, setShowComments] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -52,26 +52,26 @@ const PostCard = ({ post, onDelete }) => {
     const checkFavorite = async () => {
       if (!currentUser) return;
       try {
-        const res = await axios.get(`/api/users/${currentUser._id}/favorites`, {
+        const res = await axios.get(`/api/users/${currentUser.id}/favorites`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setIsFavorited(res.data.some(fav => fav._id === post._id));
+        setIsFavorited(res.data.some(fav => fav.id === post.id));
       } catch (e) { /* ignore */ }
     };
     // Check if subscribed to post's user
     const checkSubscribed = async () => {
       if (!currentUser) return;
       try {
-        const res = await axios.get(`/api/users/${currentUser._id}/subscriptions`, {
+        const res = await axios.get(`/api/users/${currentUser.id}/subscriptions`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setIsSubscribed(res.data.some(u => u._id === post.user._id));
+        setIsSubscribed(res.data.some(u => u.id === post.user.id));
       } catch (e) { /* ignore */ }
     };
     checkFavorite();
     checkSubscribed();
     // eslint-disable-next-line
-  }, [currentUser, post._id, post.user._id]);
+  }, [currentUser, post.id, post.user.id]);
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -83,7 +83,7 @@ const PostCard = ({ post, onDelete }) => {
 
   const handleLike = async () => {
     try {
-      const response = await axios.put(`/api/posts/like/${post._id}`);
+      const response = await axios.put(`/api/posts/like/${post.id}`);
       setIsLiked(!isLiked);
       setLikeCount(response.data.likes.length);
     } catch (error) {
@@ -95,7 +95,7 @@ const PostCard = ({ post, onDelete }) => {
     if (!comment.trim()) return;
 
     try {
-      const response = await axios.post(`/api/posts/comment/${post._id}`, {
+      const response = await axios.post(`/api/posts/comment/${post.id}`, {
         content: comment
       });
       
@@ -108,8 +108,8 @@ const PostCard = ({ post, onDelete }) => {
 
   const handleDeletePost = async () => {
     try {
-      await axios.delete(`/api/posts/${post._id}`);
-      onDelete(post._id);
+      await axios.delete(`/api/posts/${post.id}`);
+      onDelete(post.id);
       handleMenuClose();
     } catch (error) {
       console.error('Error deleting post:', error);
@@ -120,12 +120,12 @@ const PostCard = ({ post, onDelete }) => {
     if (!currentUser) return;
     try {
       if (isFavorited) {
-        await axios.delete(`/api/users/${currentUser._id}/favorites/${post._id}`, {
+        await axios.delete(`/api/users/${currentUser.id}/favorites/${post.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setIsFavorited(false);
       } else {
-        await axios.post(`/api/users/${currentUser._id}/favorites/${post._id}`, {}, {
+        await axios.post(`/api/users/${currentUser.id}/favorites/${post.id}`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setIsFavorited(true);
@@ -137,12 +137,12 @@ const PostCard = ({ post, onDelete }) => {
     if (!currentUser) return;
     try {
       if (isSubscribed) {
-        await axios.delete(`/api/users/${currentUser._id}/subscribe/${post.user._id}`, {
+        await axios.delete(`/api/users/${currentUser.id}/subscribe/${post.user.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setIsSubscribed(false);
       } else {
-        await axios.post(`/api/users/${currentUser._id}/subscribe/${post.user._id}`, {}, {
+        await axios.post(`/api/users/${currentUser.id}/subscribe/${post.user.id}`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setIsSubscribed(true);
@@ -174,7 +174,7 @@ const PostCard = ({ post, onDelete }) => {
         action={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {/* Subscribe button (not for own posts) */}
-            {currentUser?._id !== post.user._id && (
+            {currentUser?.id !== post.user.id && (
               <Button
                 size="small"
                 variant={isSubscribed ? 'outlined' : 'contained'}
@@ -193,7 +193,7 @@ const PostCard = ({ post, onDelete }) => {
                 {isSubscribed ? 'Subscribed' : 'Subscribe'}
               </Button>
             )}
-            {currentUser?._id === post.user._id && (
+            {currentUser?.id === post.user.id && (
               <>
                 <IconButton onClick={handleMenuOpen}>
                   <MoreVert />

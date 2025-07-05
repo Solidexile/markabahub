@@ -1,47 +1,17 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/sequelize');
 
-const MessageSchema = new mongoose.Schema({
-  sender: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const Chat = sequelize.define('Chat', {
+  participants: {
+    type: DataTypes.JSON, // Array of user IDs
+    allowNull: false,
   },
-  content: {
-    type: String,
-    required: true,
-    trim: true
+  messages: {
+    type: DataTypes.JSON, // Array of message objects
+    defaultValue: [],
   },
-  read: {
-    type: Boolean,
-    default: false
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+}, {
+  timestamps: true,
 });
 
-const ChatSchema = new mongoose.Schema({
-  participants: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  }],
-  messages: [MessageSchema],
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
-});
-
-// Update timestamp on save
-ChatSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-module.exports = mongoose.model('Chat', ChatSchema);
+module.exports = Chat;

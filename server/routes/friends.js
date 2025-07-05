@@ -1,28 +1,24 @@
-const mongoose = require('mongoose');
+const express = require('express');
+const router = express.Router();
+const friendController = require('../controllers/friendController');
+const { protect } = require('../middleware/auth');
 
-const FriendSchema = new mongoose.Schema({
-  user: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User',
-    required: true 
-  },
-  friend: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User',
-    required: true 
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'accepted', 'rejected'],
-    default: 'pending'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+// Send friend request
+router.post('/request', protect, friendController.sendFriendRequest);
 
-// Ensure one unique friend relationship per pair
-FriendSchema.index({ user: 1, friend: 1 }, { unique: true });
+// Respond to friend request
+router.put('/respond/:requestId', protect, friendController.respondToRequest);
 
-module.exports = mongoose.model('Friend', FriendSchema);
+// Get all friends
+router.get('/', protect, friendController.getFriends);
+
+// Get pending friend requests
+router.get('/requests', protect, friendController.getFriendRequests);
+
+// Get friend status between users
+router.get('/status/:userId', protect, friendController.getFriendStatus);
+
+// Remove friend
+router.delete('/:friendId', protect, friendController.removeFriend);
+
+module.exports = router;

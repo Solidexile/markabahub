@@ -17,6 +17,7 @@ const RegisterPage = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('');
     const [error, setError] = useState('');
     const { handleRegister, loading } = useAuth();
     const navigate = useNavigate();
@@ -24,7 +25,7 @@ const RegisterPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await handleRegister({ name, email, password });
+            await handleRegister({ name, email, password, username });
         } catch (err) {
             setError('Registration failed. Please try again.');
         }
@@ -79,6 +80,16 @@ const RegisterPage = () => {
                         margin="normal"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+
+                    <TextField
+                        label="Username"
+                        type="text"
+                        fullWidth
+                        margin="normal"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
                     />
 

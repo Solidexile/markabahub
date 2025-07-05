@@ -27,6 +27,11 @@ app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/feed', require('./routes/feed'));
+app.use('/api/stories', require('./routes/stories'));
+app.use('/api/friends', require('./routes/friends'));
+app.use('/api/groups', require('./routes/groups'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/chat', require('./routes/Chat'));
 
 // Socket.io setup
 const server = http.createServer(app);

@@ -26,6 +26,7 @@ const NotificationList = () => {
         setHasMore(response.data.length > 0);
       } catch (error) {
         console.error('Error fetching notifications:', error);
+        setNotifications([]);
       } finally {
         setLoading(false);
       }
@@ -72,7 +73,7 @@ const NotificationList = () => {
         <List>
           {notifications.map(notification => (
             <NotificationItem 
-              key={notification._id} 
+              key={notification.id} 
               notification={notification} 
             />
           ))}

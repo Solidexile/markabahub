@@ -10,12 +10,12 @@ const ItemCard = ({ item }) => {
       <CardMedia
         component="img"
         height="200"
-        image={item.images[0] || '/placeholder-item.jpg'}
+        image={item.images?.[0] || '/placeholder-item.jpg'}
         alt={item.title}
       />
       <CardContent sx={{ flexGrow: 1 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography variant="h6" component={Link} to={`/marketplace/${item._id}`} sx={{ textDecoration: 'none' }}>
+          <Typography variant="h6" component={Link} to={`/marketplace/${item.id}`} sx={{ textDecoration: 'none' }}>
             {item.title}
           </Typography>
           <Typography variant="h6" color="primary">
@@ -24,7 +24,7 @@ const ItemCard = ({ item }) => {
         </Box>
         
         <Typography variant="body2" color="text.secondary" mb={2}>
-          {item.description.length > 100 
+          {item.description?.length > 100 
             ? `${item.description.substring(0, 100)}...` 
             : item.description}
         </Typography>
@@ -53,7 +53,7 @@ const ItemCard = ({ item }) => {
             src={item.user?.avatar} 
             sx={{ width: 32, height: 32, mr: 1 }} 
             component={Link} 
-            to={`/profile/${item.user?._id}`}
+            to={`/profile/${item.user?.username}`}
           />
           <Typography variant="body2">
             {item.user?.name}

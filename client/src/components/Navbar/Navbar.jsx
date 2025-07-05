@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 
 const Navbar = () => {
-  const { currentUser, handleGoogleLogin, handleLogout } = useAuth();
+  const { currentUser, handleLogout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const [search, setSearch] = useState("");
 
@@ -72,12 +72,12 @@ const Navbar = () => {
           <IconButton component={Link} to="/marketplace" sx={{ color: 'var(--navbar-icon)' }}>
             <Store fontSize="large" />
           </IconButton>
-          <IconButton sx={{ color: 'var(--navbar-icon)' }}>
+          <IconButton component={Link} to="/notifications" sx={{ color: 'var(--navbar-icon)' }}>
             <Badge badgeContent={4} color="error">
               <Notifications fontSize="large" />
             </Badge>
           </IconButton>
-          <IconButton sx={{ color: 'var(--navbar-icon)' }}>
+          <IconButton component={Link} to="/chat" sx={{ color: 'var(--navbar-icon)' }}>
             <Badge badgeContent={2} color="error">
               <Message fontSize="large" />
             </Badge>
@@ -86,12 +86,12 @@ const Navbar = () => {
             <>
               <IconButton onClick={handleAvatarClick}>
                 <Avatar 
-                  src={currentUser?.avatar || currentUser?.photoURL} 
+                  src={currentUser?.avatar} 
                   sx={{ width: 36, height: 36 }} 
                 />
               </IconButton>
               <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-                <MenuItem component={Link} to={`/profile/${currentUser?.username || currentUser?.uid}`} onClick={handleMenuClose}>Profile</MenuItem>
+                <MenuItem component={Link} to={`/profile/${currentUser?.username}`} onClick={handleMenuClose}>Profile</MenuItem>
                 <MenuItem component={Link} to="/favorites" onClick={handleMenuClose}>Favorites</MenuItem>
                 <MenuItem component={Link} to="/subscriptions" onClick={handleMenuClose}>Subscriptions</MenuItem>
                 <MenuItem component={Link} to="/marketplace/favorites" onClick={handleMenuClose}>Marketplace Favorites</MenuItem>
@@ -100,8 +100,13 @@ const Navbar = () => {
               </Menu>
             </>
           ) : (
-            <Button variant="contained" sx={{ backgroundColor: 'var(--accent)', color: '#fff', fontWeight: 'bold', borderRadius: 2, px: 3 }} onClick={handleGoogleLogin}>
-              Sign in with Google
+            <Button 
+              variant="contained" 
+              component={Link}
+              to="/login"
+              sx={{ backgroundColor: 'var(--accent)', color: '#fff', fontWeight: 'bold', borderRadius: 2, px: 3 }}
+            >
+              Sign In
             </Button>
           )}
         </Box>

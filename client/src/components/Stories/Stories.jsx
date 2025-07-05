@@ -22,6 +22,7 @@ const Stories = () => {
         setStories(response.data);
       } catch (error) {
         console.error('Error fetching stories:', error);
+        setStories([]);
       } finally {
         setLoading(false);
       }
@@ -102,7 +103,7 @@ const Stories = () => {
       {/* Friends Stories */}
       {stories.map(story => (
         <Box 
-          key={story._id}
+          key={story.id}
           sx={{ 
             position: 'relative',
             flexShrink: 0,
@@ -113,7 +114,7 @@ const Stories = () => {
         >
           <Box
             component="img"
-            src={story.user.avatar}
+            src={story.user?.avatar}
             sx={{
               width: '100%',
               height: '100%',
@@ -131,7 +132,7 @@ const Stories = () => {
             borderRadius: '50%'
           }}>
             <Avatar 
-              src={story.user.avatar} 
+              src={story.user?.avatar} 
               sx={{ width: 32, height: 32 }} 
             />
           </Box>
@@ -143,7 +144,7 @@ const Stories = () => {
             color: 'white'
           }}>
             <Typography variant="body2" noWrap>
-              {story.user.name}
+              {story.user?.name}
             </Typography>
           </Box>
         </Box>

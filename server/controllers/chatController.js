@@ -2,19 +2,43 @@ const Chat = require('../models/Chat');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
+const { Op } = require('sequelize');
 
 // @desc    Get all chats for a user
 // @route   GET /api/chat
 // @access  Private
 exports.getChats = asyncHandler(async (req, res, next) => {
-  const chats = await Chat.find({
-    participants: req.user.id
-  })
-  .populate('participants', 'name avatar username')
-  .populate('messages.sender', 'name avatar')
-  .sort('-updatedAt');
+  const chats = await Chat.findAll({
+    where: {
+      participants: {
+        [Op.contains]: [req.user.id]
+      }
+    },
+    order: [['updatedAt', 'DESC']]
+  });
 
-  res.json(chats);
+  // Populate participants and messages with user data
+  const populatedChats = await Promise.all(chats.map(async (chat) => {
+    const participantUsers = await User.findAll({
+      where: { id: chat.participants },
+      attributes: ['id', 'name', 'avatar', 'username']
+    });
+
+    const messagesWithUsers = await Promise.all(chat.messages.map(async (message) => {
+      const sender = await User.findByPk(message.sender, {
+        attributes: ['id', 'name', 'avatar']
+      });
+      return { ...message, sender };
+    }));
+
+    return {
+      ...chat.toJSON(),
+      participants: participantUsers,
+      messages: messagesWithUsers
+    };
+  }));
+
+  res.json(populatedChats);
 });
 
 // @desc    Create or access a chat
@@ -29,24 +53,41 @@ exports.accessChat = asyncHandler(async (req, res, next) => {
 
   // Check if chat already exists
   let chat = await Chat.findOne({
-    participants: {
-      $all: [req.user.id, userId],
-      $size: 2
+    where: {
+      participants: {
+        [Op.contains]: [req.user.id, userId]
+      }
     }
-  })
-  .populate('participants', 'name avatar username')
-  .populate('messages.sender', 'name avatar');
+  });
 
   if (!chat) {
     // Create new chat
     chat = await Chat.create({
-      participants: [req.user.id, userId]
+      participants: [req.user.id, userId],
+      messages: []
     });
-    
-    await chat.populate('participants', 'name avatar username');
   }
 
-  res.json(chat);
+  // Populate participants and messages
+  const participantUsers = await User.findAll({
+    where: { id: chat.participants },
+    attributes: ['id', 'name', 'avatar', 'username']
+  });
+
+  const messagesWithUsers = await Promise.all(chat.messages.map(async (message) => {
+    const sender = await User.findByPk(message.sender, {
+      attributes: ['id', 'name', 'avatar']
+    });
+    return { ...message, sender };
+  }));
+
+  const populatedChat = {
+    ...chat.toJSON(),
+    participants: participantUsers,
+    messages: messagesWithUsers
+  };
+
+  res.json(populatedChat);
 });
 
 // @desc    Send a message
@@ -59,7 +100,7 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Message content is required', 400));
   }
 
-  const chat = await Chat.findById(req.params.chatId);
+  const chat = await Chat.findByPk(req.params.chatId);
 
   if (!chat) {
     return next(new ErrorResponse('Chat not found', 404));
@@ -74,16 +115,19 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
   const message = {
     sender: req.user.id,
     content,
-    read: false
+    read: false,
+    createdAt: new Date()
   };
 
-  chat.messages.push(message);
-  await chat.save();
+  const updatedMessages = [...chat.messages, message];
+  await chat.update({ messages: updatedMessages });
 
-  // Populate sender info
-  await chat.populate('messages.sender', 'name avatar');
+  // Get sender info
+  const sender = await User.findByPk(req.user.id, {
+    attributes: ['id', 'name', 'avatar']
+  });
 
-  const newMessage = chat.messages[chat.messages.length - 1];
+  const newMessage = { ...message, sender };
   
   res.status(201).json(newMessage);
 });
@@ -92,20 +136,21 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/chat/:chatId/read
 // @access  Private
 exports.markAsRead = asyncHandler(async (req, res, next) => {
-  const chat = await Chat.findById(req.params.chatId);
+  const chat = await Chat.findByPk(req.params.chatId);
 
   if (!chat) {
     return next(new ErrorResponse('Chat not found', 404));
   }
 
   // Mark all unread messages from other participants as read
-  chat.messages.forEach(message => {
-    if (!message.read && !message.sender.equals(req.user.id)) {
-      message.read = true;
+  const updatedMessages = chat.messages.map(message => {
+    if (!message.read && message.sender !== req.user.id) {
+      return { ...message, read: true };
     }
+    return message;
   });
 
-  await chat.save();
+  await chat.update({ messages: updatedMessages });
 
   res.json({ success: true });
 });
